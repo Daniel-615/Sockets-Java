@@ -46,27 +46,6 @@ public class Cliente {
         this.nombre=nom;
         this.apellido=ape;
         this.telefono=tel;
-    }
-    public static void main(String[] args){
-        try {
-            Scanner sn=new Scanner(System.in);
-            sn.useDelimiter("\n");
-            Socket sc=new Socket("127.0.0.1",5000);
-            DataInputStream in=new DataInputStream(sc.getInputStream());
-            DataOutputStream out=new DataOutputStream(sc.getOutputStream());
-            String mensaje=in.readUTF();
-            System.out.println(mensaje);
-            String nombre=sn.next();
-            out.writeUTF(nombre);
-            ClienteHilo hilo=new ClienteHilo(in,out);
-            hilo.start();
-            hilo.join();
-            
-        } catch (IOException ex) {
-            Logger.getLogger(Cliente.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(Cliente.class.getName()).log(Level.SEVERE, null, ex);
-        }
-                
-    }
+    }  
+    
 }
