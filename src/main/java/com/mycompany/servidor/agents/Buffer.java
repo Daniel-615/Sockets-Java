@@ -1,0 +1,64 @@
+package com.mycompany.servidor.agents;
+
+public class Buffer {
+    private Cliente buffer[];
+    private int siguiente;     
+    // Flags para saber el estado del buffer
+    private boolean estaLlena;
+    private boolean estaVacia;
+    public Buffer(int tamanio) {
+        buffer = new Cliente[tamanio];
+        siguiente = 0;
+        estaLlena = false;
+        estaVacia = true;
+    }
+    public void getName(){
+        
+    }
+    // Método para retirar clientes del buffer
+    public synchronized Cliente atenderCliente() {
+        // No se puede consumir si el buffer está vacío
+        while (estaVacia) {
+            try {
+                wait(); // Se sale cuando estaVacia cambia a false
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Restores interrupted state
+            }
+        }
+        // Decrementa la cuenta para apuntar al cliente correcto
+        siguiente--;
+        // Obtiene el cliente a ser atendido
+        Cliente cliente = buffer[siguiente];
+        // Si se ha retirado el último cliente, el buffer está vacío
+        if (siguiente == 0) {
+            estaVacia = true;
+        }
+        // El buffer no puede estar lleno después de atender un cliente
+        estaLlena = false;
+        notifyAll(); // Notifica a los productores que hay espacio disponible
+        return cliente;
+    }
+    // Método para añadir clientes al buffer
+    public synchronized void agregarCliente(Cliente cliente) {
+        // Espera hasta que haya espacio para otro cliente
+        while (estaLlena) {
+            try {
+                wait(); // Espera hasta que haya espacio en el buffer
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Restores interrupted state
+            }
+        }
+        // Añade el cliente al buffer en el primer lugar disponible si el índice siguiente es válido
+        if (siguiente < buffer.length) {
+            buffer[siguiente] = cliente;
+            siguiente++;
+        }
+        // Verifica si el buffer está lleno después de agregar el cliente
+        if (siguiente == buffer.length) {
+            estaLlena = true;
+        }
+        // Indica que el buffer no está vacío, ya que se ha agregado un cliente
+        estaVacia = false;
+        notifyAll(); 
+    }
+}
