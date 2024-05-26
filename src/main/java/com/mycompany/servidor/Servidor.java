@@ -1,10 +1,8 @@
 package com.mycompany.servidor;
 
-import com.mycompany.servidor.forms.Form;
 import com.mycompany.servidor.tickets.Tickets;
-
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,44 +13,58 @@ import java.util.logging.Logger;
 
 public class Servidor {
     private static List<Tickets> ticketsList = new ArrayList<>();
-    private static String descripcion,nombreCliente;
+    private static Buffer b = new Buffer(10);
     public static void main(String[] args) {
+        DataInputStream dataIn = null;
         try {
             ServerSocket server = new ServerSocket(5000);
-            Socket sc;
             System.out.println("Servidor iniciado");
-
-            // Mostrar formulario
-            Form obj = new Form();
-            obj.setVisible(true);
-
             while (true) {
-                sc = server.accept();
-                DataInputStream in = new DataInputStream(sc.getInputStream());
-                DataOutputStream out = new DataOutputStream(sc.getOutputStream());
+                Socket sc = server.accept();
+                dataIn=new DataInputStream(sc.getInputStream());
+                System.out.println("Cliente conectado desde " + sc.getInetAddress());
+                
+                String nombreAgente = dataIn.readUTF();
+                System.out.println("Nombre del agente: " + nombreAgente);
 
-                // Leer el nombre del cliente
-                nombreCliente = in.readUTF();
-                descripcion=in.readUTF();
-                // Crear un ticket para el cliente
-                Tickets ticket = new Tickets(nombreCliente,descripcion);
-
-                // Agregar el ticket de manera segura
-                agregarTicket(ticket);
-
-                out.writeUTF("Tu token es " + ticket.toString());
-
+                String descripcion = dataIn.readUTF();
+                System.out.println("Descripcion: " + descripcion);
+                
+                System.out.println("antes de crear el consumidor");
+                //Crear el consumidor
+                ServidorHilo[] servidor=new ServidorHilo[3];
+                for(int i=0;i<3;i++){
+                    servidor[i]=new ServidorHilo(sc,b,nombreAgente,descripcion);
+                }
+                //Producir
+                System.out.println("produciendo");
+                Productor p=new Productor(b,nombreAgente,descripcion);
+                p.start();
+                //Consumir
+                System.out.println("consumiendo");
+                for(int i=0;i<3;i++){
+                    servidor[i].start();
+                }
                 // Iniciar un hilo para manejar la conexión con el cliente
-                ServidorHilo hilo = new ServidorHilo(in, out, nombreCliente);
-                hilo.start();
-
-                System.out.println("Creada la conexion con el cliente " + nombreCliente);
+                //new ServidorHilo(sc,b,nombreAgente,descripcion).start();
             }
         } catch (IOException ex) {
             Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
     public static synchronized void agregarTicket(Tickets ticket) {
         ticketsList.add(ticket);
+    }
+
+    public static Tickets getTicket(int id) {
+        synchronized (ticketsList) {
+            for (Tickets ticket : ticketsList) {
+                if (ticket.getId() == id) {
+                    return ticket;
+                }
+            }
+        }
+        return null;
     }
 }
