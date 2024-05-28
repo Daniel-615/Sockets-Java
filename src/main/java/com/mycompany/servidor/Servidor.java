@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 public class Servidor {
     private static List<Tickets> ticketsList = new ArrayList<>();
-    private static Buffer b = new Buffer(10);
+    static Buffer b = new Buffer(10);
     public static void main(String[] args) {
         DataInputStream dataIn = null;
         try {
@@ -29,15 +29,12 @@ public class Servidor {
 
                 String descripcion = dataIn.readUTF();
                 System.out.println("Descripcion: " + descripcion);
-                
-                System.out.println("antes de crear el consumidor");
                 //Crear el consumidor
                 ServidorHilo[] servidor=new ServidorHilo[3];
                 for(int i=0;i<3;i++){
                     servidor[i]=new ServidorHilo(sc,b,nombreAgente,descripcion);
                 }
                 //Producir
-                System.out.println("produciendo");
                 Productor p=new Productor(b,nombreAgente,descripcion);
                 p.start();
                 //Consumir
@@ -45,8 +42,6 @@ public class Servidor {
                 for(int i=0;i<3;i++){
                     servidor[i].start();
                 }
-                // Iniciar un hilo para manejar la conexión con el cliente
-                //new ServidorHilo(sc,b,nombreAgente,descripcion).start();
             }
         } catch (IOException ex) {
             Logger.getLogger(Servidor.class.getName()).log(Level.SEVERE, null, ex);

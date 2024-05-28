@@ -26,46 +26,44 @@ public class ServidorHilo extends Thread {
 
     @Override
     public void run() {
-        while(status){
-            System.out.println("atendiendo el cliente");
-            AgentServidor agente=buffer.atenderAgente();
-            System.out.println("clase "+agente);
-            DataOutputStream dataOut = null;
-            System.out.println("estas dentro del hilo");
-            if(agente!=null){
-                try{
-                    dataOut = new DataOutputStream(socket.getOutputStream());
-                    sleep((int) (Math.random() * 6000));
-                    System.out.println("Agente procesado");
-                    agents_process++;
-                    Tickets ticket = new Tickets(nombreAgente, descripcion);
-                    Servidor.agregarTicket(ticket);
-                    // Enviar respuesta al cliente
-                    dataOut.writeUTF("Comunicación con el agente iniciada. Token: " + ticket.getId());
-                    dataOut.writeUTF("Ticket enviado: " + Servidor.getTicket(ticket.getId()));
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(ServidorHilo.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (IOException ex) {
-                    Logger.getLogger(ServidorHilo.class.getName()).log(Level.SEVERE, null, ex);
-                }finally{
-                    try{
-                        if (dataOut != null) {
-                            dataOut.close();
-                        }
-                        if (socket != null) {
-                            socket.close();
-                        }
+        DataOutputStream dataOut = null;
+        try {
+            dataOut = new DataOutputStream(socket.getOutputStream());
+            while (status) {
+                AgentServidor agente = this.buffer.atenderAgente();
+                if (agente != null) {
+                    try {
+                        sleep((int) (Math.random() * 6000));
+                        System.out.println("Agente procesado");
+                        Tickets ticket = new Tickets(nombreAgente, descripcion);
+                        Servidor.agregarTicket(ticket);
+                        // Enviar respuesta al cliente
+                        //dataOut.writeUTF("Comunicación con el agente iniciada. Token: " + ticket.getId());
+                        dataOut.writeUTF("Ticket: "+ticket.toString());
+                        sleep((int) (Math.random()*2000));
+                        System.out.println("Tarea procesada");
+                        ticket.setCompletado(true);
+                        //dataOut.writeUTF("Comunicacion con el agente terminada. Token: "+ticket.getId());
+                        //dataOut.writeUTF("Ticket enviado: " + Servidor.getTicket(ticket.getId()));
+                        dataOut.writeUTF("Ticket: "+ticket.toString());
+                        agents_process++;
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(ServidorHilo.class.getName()).log(Level.SEVERE, null, ex);
+                        Thread.currentThread().interrupt(); 
                     } catch (IOException ex) {
-                       Logger.getLogger(ServidorHilo.class.getName()).log(Level.SEVERE, "Error al cerrar los streams y el socket", ex);
+                        Logger.getLogger(ServidorHilo.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
+                // Verificar si todas las tareas están completas
+                if (agents_process == total_agents) {
+                    status = false;
+                }
             }
-            //colocar tambien que la tarea esta completa en el if
-            if (agents_process == total_agents) {
-                status = false;  
-            }
+        } catch (IOException ex) {
+            Logger.getLogger(ServidorHilo.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
     public void recibir(){
         DataInputStream dataIn = null;
         DataOutputStream dataOut = null;

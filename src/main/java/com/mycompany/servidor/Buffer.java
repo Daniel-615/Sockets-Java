@@ -24,20 +24,20 @@ public class Buffer {
         }
         // Decrementa la cuenta para apuntar al cliente correcto
         siguiente--;
-        // Obtiene el cliente a ser atendido
+        // Obtiene el agente a ser atendido
         AgentServidor agente = buffer[siguiente];
         // Si se ha retirado el último cliente, el buffer está vacío
         if (siguiente == 0) {
             estaVacia = true;
         }
-        // El buffer no puede estar lleno después de atender un cliente
+        // El buffer no puede estar lleno después de atender un agente
         estaLlena = false;
         notifyAll(); // Notifica a los productores que hay espacio disponible
         return agente;
     }
     // Método para añadir clientes al buffer
     public synchronized void agregarAgente(AgentServidor agente) {
-        // Espera hasta que haya espacio para otro cliente
+        // Espera hasta que haya espacio para otro agente
         while (estaLlena) {
             try {
                 wait(); // Espera hasta que haya espacio en el buffer
